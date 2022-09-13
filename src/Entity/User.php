@@ -22,6 +22,10 @@ class User
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Client $relation = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -59,6 +63,18 @@ class User
     public function setCreatedAt(\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getRelation(): ?Client
+    {
+        return $this->relation;
+    }
+
+    public function setRelation(?Client $relation): self
+    {
+        $this->relation = $relation;
 
         return $this;
     }

@@ -18,12 +18,12 @@ class ProductController extends AbstractController
     {
         $products = $productRepository->findAll();
         $jsonProducts = $serializer->serialize($products, 'json');
-        return new JsonResponse([
+        return new JsonResponse(
             $jsonProducts,
             Response::HTTP_OK,
             [],
             true
-        ]);
+        );
     }
 
     /* Get one product */
@@ -31,12 +31,12 @@ class ProductController extends AbstractController
     public function getOneProduct(Product $product, SerializerInterface $serializer)
     {
         $jsonProduct = $serializer->serialize($product, 'json');
-        return new JsonResponse([
+        return new JsonResponse(
             $jsonProduct,
             Response::HTTP_OK,
             [],
             true
-        ]);
+        );
     }
 
 

@@ -24,7 +24,7 @@ class User
 
     #[ORM\ManyToOne(inversedBy: 'users')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Client $relation = null;
+    private ?Client $client = null;
 
     public function getId(): ?int
     {
@@ -67,14 +67,14 @@ class User
         return $this;
     }
 
-    public function getRelation(): ?Client
+    public function getClient(): ?Client
     {
-        return $this->relation;
+        return $this->client;
     }
 
-    public function setRelation(?Client $relation): self
+    public function setClient(?Client $client): self
     {
-        $this->relation = $relation;
+        $this->client = $client;
 
         return $this;
     }

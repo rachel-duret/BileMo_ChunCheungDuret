@@ -27,7 +27,7 @@ class Client
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\OneToMany(mappedBy: 'relation', targetEntity: User::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'client', targetEntity: User::class, orphanRemoval: true)]
     private Collection $users;
 
     public function __construct()
@@ -100,7 +100,7 @@ class Client
     {
         if (!$this->users->contains($user)) {
             $this->users->add($user);
-            $user->setRelation($this);
+            $user->setClient($this);
         }
 
         return $this;
@@ -110,8 +110,8 @@ class Client
     {
         if ($this->users->removeElement($user)) {
             // set the owning side to null (unless already changed)
-            if ($user->getRelation() === $this) {
-                $user->setRelation(null);
+            if ($user->getClient() === $this) {
+                $user->setClient(null);
             }
         }
 

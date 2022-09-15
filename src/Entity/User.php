@@ -26,6 +26,7 @@ class User
     #[ORM\JoinColumn(nullable: false)]
     private ?Client $client = null;
 
+
     public function getId(): ?int
     {
         return $this->id;

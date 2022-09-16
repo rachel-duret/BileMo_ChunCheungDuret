@@ -47,6 +47,9 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(["getClients"])]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $clientName = null;
+
     public function __construct()
     {
         $this->users = new ArrayCollection();
@@ -160,6 +163,18 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCreatedAt(\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getClientName(): ?string
+    {
+        return $this->clientName;
+    }
+
+    public function setClientName(string $clientName): self
+    {
+        $this->clientName = $clientName;
 
         return $this;
     }

@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 class Client implements UserInterface, PasswordAuthenticatedUserInterface
@@ -21,6 +22,8 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180, unique: true)]
     #[Groups(['getClients'])]
+    #[Assert\NotBlank(message: "Email is required .")]
+    #[Assert\Email(message: "Have to be valid email .")]
     private ?string $email = null;
 
     #[ORM\Column]
@@ -32,6 +35,8 @@ class Client implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     #[Groups(["getClients"])]
+    #[Assert\NotBlank(message: "Password is required .")]
+    #[Assert\Length(min: 6, max: 50, minMessage: " Password minimun {{ limit }} caracteres", maxMessage: "Password maximun{{ limit }} caracteres")]
     private ?string $password = null;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: User::class, orphanRemoval: true)]

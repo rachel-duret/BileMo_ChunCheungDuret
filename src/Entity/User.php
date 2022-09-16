@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User
@@ -17,14 +18,19 @@ class User
 
     #[ORM\Column(length: 255, unique: true)]
     #[Groups(["getUsers"])]
+    #[Assert\NotBlank(message: "Username is required .")]
+    #[Assert\Length(min: 4, max: 255, minMessage: " Username minimun {{ limit }} caracteres", maxMessage: "Username maximun{{ limit }} caracteres")]
     private ?string $username = null;
 
     #[ORM\Column(length: 255, unique: true)]
     #[Groups(["getUsers"])]
+    #[Assert\NotBlank(message: "Email is required .")]
+    #[Assert\Email(message: "Have to be valid email .")]
     private ?string $email = null;
 
     #[ORM\Column]
     #[Groups(["getUsers"])]
+    #[Assert\NotBlank(message: "Date is required .")]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]

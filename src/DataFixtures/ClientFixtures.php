@@ -22,6 +22,7 @@ class ClientFixtures extends Fixture
         $client->setClientName('smart mobile');
         $client->setEmail('contact@smartmobile.com');
         $client->setPassword($this->userPasswordHasher->hashPassword($client, "password"));
+        $client->setRoles(["ROLE_USER"]);
         $client->setCreatedAt(new DateTimeImmutable());
         $manager->persist($client);
 

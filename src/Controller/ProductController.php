@@ -24,10 +24,11 @@ class ProductController extends AbstractController
             [],
             true
         );
+        //pagenation
     }
 
     /* Get one product */
-    #[Route('api/products/{id}', name: 'app_product', methods: ['GET'])]
+    #[Route('/api/products/{id}', name: 'app_product', methods: ['GET'])]
     public function getOneProduct(Product $product, SerializerInterface $serializer)
     {
         $jsonProduct = $serializer->serialize($product, 'json', ['groups' => 'getProducts']);

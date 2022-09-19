@@ -68,9 +68,14 @@ class UserController extends AbstractController
 
     /* Get all user */
     #[Route('/api/users', name: 'getAllUsers', methods: ['GET'])]
-    public function getAllUsers(UserRepository $userRepository, SerializerInterface $serializer): JsonResponse
-    {
-        $userList = $userRepository->findAll();
+    public function getAllUsers(
+        UserRepository $userRepository,
+        SerializerInterface $serializer,
+        Request $request
+    ): JsonResponse {
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 3);
+        $userList = $userRepository->findAllWithPagination($page, $limit);
         $jsonUserList = $serializer->serialize($userList, 'json', ['groups' => 'getUsers']);
 
         return new JsonResponse(

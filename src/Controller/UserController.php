@@ -6,6 +6,8 @@ use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
+use JMS\Serializer\SerializerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,7 +15,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
@@ -45,7 +46,8 @@ class UserController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        $jsonUser = $serializer->serialize($user, 'json', ['groups' => 'getUsers']);
+        $context = SerializationContext::create()->setGroups(["getUsers"]);
+        $jsonUser = $serializer->serialize($user, 'json', $context);
         $location = $urlGenerator->generate('getOneUser', ['id' => $user->getId()]);
         return new JsonResponse(
             $jsonUser,
@@ -59,7 +61,8 @@ class UserController extends AbstractController
     #[Route('api/users/{id}', name: 'getOneUser', methods: ['GET'])]
     public function getOneUser(User $user, SerializerInterface $serializer)
     {
-        $jsonUser = $serializer->serialize($user, 'json', ['groups' => 'getUsers']);
+        $context = SerializationContext::create()->setGroups(["getUsers"]);
+        $jsonUser = $serializer->serialize($user, 'json', $context);
         return new JsonResponse(
             $jsonUser,
             Response::HTTP_OK,
@@ -87,7 +90,8 @@ class UserController extends AbstractController
             $item->tag("usersCache");
             //pagination users
             $userList = $userRepository->findAllWithPagination($page, $limit);
-            return $serializer->serialize($userList, 'json', ['groups' => 'getUsers']);
+            $context = SerializationContext::create()->setGroups(['getUsers']);
+            return $serializer->serialize($userList, 'json', $context);
         });
 
         return new JsonResponse(

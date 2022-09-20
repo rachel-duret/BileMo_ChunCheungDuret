@@ -15,6 +15,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class UserController extends AbstractController
 {
@@ -71,12 +73,22 @@ class UserController extends AbstractController
     public function getAllUsers(
         UserRepository $userRepository,
         SerializerInterface $serializer,
-        Request $request
+        Request $request,
+        TagAwareCacheInterface $cachePool
     ): JsonResponse {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);
-        $userList = $userRepository->findAllWithPagination($page, $limit);
-        $jsonUserList = $serializer->serialize($userList, 'json', ['groups' => 'getUsers']);
+        //Cache seeting
+        $cacheId = "getAllusers-$page-$limit";
+
+        $jsonUserList = $cachePool->get($cacheId, function (ItemInterface $item) use ($userRepository, $page, $limit, $serializer) {
+            // echo is for test teh cache, will delete it in production
+            echo ("not cache yet");
+            $item->tag("usersCache");
+            //pagination users
+            $userList = $userRepository->findAllWithPagination($page, $limit);
+            return $serializer->serialize($userList, 'json', ['groups' => 'getUsers']);
+        });
 
         return new JsonResponse(
             $jsonUserList,
@@ -90,8 +102,9 @@ class UserController extends AbstractController
     /* Delete one user */
 
     #[Route('/api/users/{id}', name: 'deleteOneUser', methods: ['DELETE'])]
-    public function deleteOneBook(User $user, EntityManagerInterface $em): JsonResponse
+    public function deleteOneBook(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
+        $cachePool->invalidateTags(["usersCache"]);
         $em->remove($user);
         $em->flush();
 

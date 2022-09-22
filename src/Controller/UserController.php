@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\UserRepository;
+use App\Service\CacheService;
+use App\Service\UserService;
+use App\Service\VersioningService;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
@@ -27,24 +30,20 @@ class UserController extends AbstractController
     public function addOneUser(
         Request $request,
         SerializerInterface $serializer,
-        EntityManagerInterface $em,
         UrlGeneratorInterface $urlGenerator,
+        ValidatorInterface $validator,
+        UserService $userService,
         ClientRepository $clientRepository,
-        ValidatorInterface $validator
+        EntityManagerInterface $em
     ): JsonResponse {
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
-
         //Check data before stock in the database
         $errors = $validator->validate($user);
 
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
-        $content = $request->toArray();
-        $clientId = $content['clientId'];
-        $user->setClient($clientRepository->find($clientId));
-        $em->persist($user);
-        $em->flush();
+        $userService->addOneUser($user,  $request, $clientRepository, $em);
 
         $context = SerializationContext::create()->setGroups(["getUsers"]);
         $jsonUser = $serializer->serialize($user, 'json', $context);
@@ -59,9 +58,14 @@ class UserController extends AbstractController
 
     /*  Get one user */
     #[Route('api/users/{id}', name: 'getOneUser', methods: ['GET'])]
-    public function getOneUser(User $user, SerializerInterface $serializer)
-    {
+    public function getOneUser(
+        User $user,
+        SerializerInterface $serializer,
+        VersioningService $versioningService
+    ) {
+        $version = $versioningService->getVersion();
         $context = SerializationContext::create()->setGroups(["getUsers"]);
+        $context->setVersion($version);
         $jsonUser = $serializer->serialize($user, 'json', $context);
         return new JsonResponse(
             $jsonUser,
@@ -75,24 +79,14 @@ class UserController extends AbstractController
     #[Route('/api/users', name: 'getAllUsers', methods: ['GET'])]
     public function getAllUsers(
         UserRepository $userRepository,
-        SerializerInterface $serializer,
         Request $request,
-        TagAwareCacheInterface $cachePool
+        CacheService $cacheService
     ): JsonResponse {
-        $page = $request->get('page', 1);
-        $limit = $request->get('limit', 3);
-        //Cache seeting
-        $cacheId = "getAllusers-$page-$limit";
 
-        $jsonUserList = $cachePool->get($cacheId, function (ItemInterface $item) use ($userRepository, $page, $limit, $serializer) {
-            // echo is for test teh cache, will delete it in production
-            echo ("not cache yet");
-            $item->tag("usersCache");
-            //pagination users
-            $userList = $userRepository->findAllWithPagination($page, $limit);
-            $context = SerializationContext::create()->setGroups(['getUsers']);
-            return $serializer->serialize($userList, 'json', $context);
-        });
+        $getGroups = "getUsers";
+        $userCache = "usersCache";
+        //call cache service
+        $jsonUserList = $cacheService->cache($request, $userRepository, $getGroups, $userCache);
 
         return new JsonResponse(
             $jsonUserList,

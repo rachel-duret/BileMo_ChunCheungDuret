@@ -7,6 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation\Since;
 
 /**
  * ...
@@ -55,7 +56,8 @@ class User
 
     #[ORM\Column]
     #[Groups(["getUsers"])]
-    #[Assert\NotBlank(message: "Date is required .")]
+    //#[Assert\NotBlank(message: "Date is required .")]
+    #[Since("2.0")]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]

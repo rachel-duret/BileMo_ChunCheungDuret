@@ -56,7 +56,7 @@ class User
 
     #[ORM\Column]
     #[Groups(["getUsers"])]
-    #[Assert\NotBlank(message: "Date is required .")]
+    //#[Assert\NotBlank(message: "Date is required .")]
     #[Since("2.0")]
     private ?\DateTimeImmutable $createdAt = null;
 

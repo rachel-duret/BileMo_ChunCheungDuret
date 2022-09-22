@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\UserRepository;
+use App\Service\VersioningService;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
@@ -59,9 +60,14 @@ class UserController extends AbstractController
 
     /*  Get one user */
     #[Route('api/users/{id}', name: 'getOneUser', methods: ['GET'])]
-    public function getOneUser(User $user, SerializerInterface $serializer)
-    {
+    public function getOneUser(
+        User $user,
+        SerializerInterface $serializer,
+        VersioningService $versioningService
+    ) {
+        $version = $versioningService->getVersion();
         $context = SerializationContext::create()->setGroups(["getUsers"]);
+        $context->setVersion($version);
         $jsonUser = $serializer->serialize($user, 'json', $context);
         return new JsonResponse(
             $jsonUser,

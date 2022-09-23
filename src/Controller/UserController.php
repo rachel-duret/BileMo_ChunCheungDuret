@@ -43,7 +43,8 @@ class UserController extends AbstractController
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
-        $userService->addOneUser($user,  $request, $clientRepository, $em);
+        //dd($loggedUserId);
+        $userService->addOneUser($user,  $request,  $em, $this->getUser());
 
         $context = SerializationContext::create()->setGroups(["getUsers"]);
         $jsonUser = $serializer->serialize($user, 'json', $context);

@@ -2,18 +2,18 @@
 
 namespace App\Service;
 
+use App\Entity\Client;
 use App\Repository\ClientRepository;
 use DateTimeImmutable;
 
 class UserService
 {
 
-    public function addOneUser($user, $request, $clientRepository, $em): void
+    public function addOneUser($user, $request,  $em, Client $loggerUser): void
     {
         $user->setCreatedAt(new DateTimeImmutable());
         $content = $request->toArray();
-        $clientId = $content['clientId'];
-        $user->setClient($clientRepository->find($clientId));
+        $user->setClient($loggerUser);
         $em->persist($user);
         $em->flush();
     }

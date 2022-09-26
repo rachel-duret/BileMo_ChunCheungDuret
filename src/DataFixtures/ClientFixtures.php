@@ -26,6 +26,15 @@ class ClientFixtures extends Fixture
         $client->setCreatedAt(new DateTimeImmutable());
         $manager->persist($client);
 
+        $client1 = new Client();
+
+        $client1->setClientName('admin');
+        $client1->setEmail('admin@gmail.com');
+        $client1->setPassword($this->userPasswordHasher->hashPassword($client1, "password"));
+        $client1->setRoles(["ROLE_ADMIN"]);
+        $client1->setCreatedAt(new DateTimeImmutable());
+        $manager->persist($client1);
+
         $manager->flush();
 
         $this->addReference('client', $client);

@@ -57,11 +57,11 @@ class User
     #[ORM\Column]
     #[Groups(["getUsers"])]
     //#[Assert\NotBlank(message: "Date is required .")]
-    #[Since("2.0")]
+    //#[Since("2.0")]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
-    #[Groups(["getUsers"])]
+    //#[Groups(["getUsers"])]
     #[ORM\JoinColumn(nullable: false)]
     private ?Client $client = null;
 

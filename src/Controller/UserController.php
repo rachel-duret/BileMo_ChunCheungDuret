@@ -3,12 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Repository\ClientRepository;
 use App\Repository\UserRepository;
 use App\Service\CacheService;
 use App\Service\UserService;
 use App\Service\VersioningService;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\Id;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
@@ -19,7 +19,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class UserController extends AbstractController
@@ -33,7 +32,6 @@ class UserController extends AbstractController
         UrlGeneratorInterface $urlGenerator,
         ValidatorInterface $validator,
         UserService $userService,
-        ClientRepository $clientRepository,
         EntityManagerInterface $em
     ): JsonResponse {
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
@@ -43,8 +41,10 @@ class UserController extends AbstractController
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
-        //dd($loggedUserId);
-        $userService->addOneUser($user,  $request,  $em, $this->getUser());
+        // user setting befor insert to database;
+        $userService->addOneUser($user, $this->getUser());
+        $em->persist($user);
+        $em->flush();
 
         $context = SerializationContext::create()->setGroups(["getUsers"]);
         $jsonUser = $serializer->serialize($user, 'json', $context);
@@ -64,16 +64,19 @@ class UserController extends AbstractController
         SerializerInterface $serializer,
         VersioningService $versioningService
     ) {
-        $version = $versioningService->getVersion();
-        $context = SerializationContext::create()->setGroups(["getUsers"]);
-        $context->setVersion($version);
-        $jsonUser = $serializer->serialize($user, 'json', $context);
-        return new JsonResponse(
-            $jsonUser,
-            Response::HTTP_OK,
-            [],
-            true
-        );
+        if ($user->getClient() === $this->getUser()) {
+            $version = $versioningService->getVersion();
+            $context = SerializationContext::create()->setGroups(["getUsers"]);
+            $context->setVersion($version);
+            $jsonUser = $serializer->serialize($user, 'json', $context);
+            return new JsonResponse(
+                $jsonUser,
+                Response::HTTP_OK,
+                [],
+                true
+            );
+        }
+        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
     }
 
     /* Get all user */
@@ -86,8 +89,11 @@ class UserController extends AbstractController
 
         $getGroups = "getUsers";
         $userCache = "usersCache";
+        $clientEmail = $this->getUser()->getUserIdentifier();
+
+
         //call cache service
-        $jsonUserList = $cacheService->cache($request, $userRepository, $getGroups, $userCache);
+        $jsonUserList = $cacheService->cache($request, $userRepository, $getGroups, $userCache, $clientEmail);
 
         return new JsonResponse(
             $jsonUserList,

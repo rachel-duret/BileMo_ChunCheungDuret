@@ -20,7 +20,7 @@ class CacheService
         $this->serializer = $serializer;
     }
 
-    public function cache($request, $repository, string $getGroups, string $entityCache, $client)
+    public function cache($request, $repository, string $getGroups, string $entityCache, $client = null)
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);

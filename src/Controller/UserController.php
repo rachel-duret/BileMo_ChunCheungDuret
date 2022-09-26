@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Client;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\CacheService;
@@ -84,16 +85,15 @@ class UserController extends AbstractController
     public function getAllUsers(
         UserRepository $userRepository,
         Request $request,
-        CacheService $cacheService
+        CacheService $cacheService,
     ): JsonResponse {
 
         $getGroups = "getUsers";
         $userCache = "usersCache";
-        $clientEmail = $this->getUser()->getUserIdentifier();
-
-
+        $client  = $this->getUser();
         //call cache service
-        $jsonUserList = $cacheService->cache($request, $userRepository, $getGroups, $userCache, $clientEmail);
+        $jsonUserList = $cacheService->cache($request, $userRepository, $getGroups, $userCache,  $client);
+
 
         return new JsonResponse(
             $jsonUserList,
@@ -109,10 +109,14 @@ class UserController extends AbstractController
     #[Route('/api/users/{id}', name: 'deleteOneUser', methods: ['DELETE'])]
     public function deleteOneBook(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
-        $cachePool->invalidateTags(["usersCache"]);
-        $em->remove($user);
-        $em->flush();
+        if ($user === $this->getUser()) {
+            $cachePool->invalidateTags(["usersCache"]);
+            $em->remove($user);
+            $em->flush();
 
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+
+        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
     }
 }

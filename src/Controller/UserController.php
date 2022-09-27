@@ -9,9 +9,10 @@ use App\Service\CacheService;
 use App\Service\UserService;
 use App\Service\VersioningService;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\Id;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,12 +22,24 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use OpenApi\Attributes as OA;
 
 class UserController extends AbstractController
 {
     /* Add one user */
     #[Route('/api/users', name: 'addOneUser', methods: ['POST'])]
     #[IsGranted("ROLE_USER", message: 'You do not have the right to add one user.')]
+    #[OA\Response(
+        response: 201,
+        description: 'Returns the new user just created',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
+        )
+    )]
+    #[OA\RequestBody(required: true,)]
+    #[OA\Tag(name: 'User')]
+    //#[Security(name: 'Bearer')]
     public function addOneUser(
         Request $request,
         SerializerInterface $serializer,
@@ -60,6 +73,18 @@ class UserController extends AbstractController
 
     /*  Get one user */
     #[Route('api/users/{id}', name: 'getOneUser', methods: ['GET'])]
+    #[Route('/api/users', name: 'addOneUser', methods: ['POST'])]
+    #[IsGranted("ROLE_USER", message: 'You do not have the right to add one user.')]
+    #[OA\Response(
+        response: 200,
+        description: 'Return the detail of user by id',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
+        )
+    )]
+    #[OA\Tag(name: 'User')]
+    //#[Security(name: 'Bearer')]
     public function getOneUser(
         User $user,
         SerializerInterface $serializer,
@@ -82,6 +107,28 @@ class UserController extends AbstractController
 
     /* Get all user */
     #[Route('/api/users', name: 'getAllUsers', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Return list of users',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
+        )
+    )]
+    #[OA\Parameter(
+        name: 'page',
+        in: 'query',
+        description: 'Return number of page',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Parameter(
+        name: 'limit',
+        in: 'query',
+        description: 'Return product of limit',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Tag(name: 'User')]
+    //#[Security(name: 'Bearer')]
     public function getAllUsers(
         UserRepository $userRepository,
         Request $request,
@@ -107,6 +154,14 @@ class UserController extends AbstractController
     /* Delete one user */
 
     #[Route('/api/users/{id}', name: 'deleteOneUser', methods: ['DELETE'])]
+    #[Route('/api/users', name: 'addOneUser', methods: ['POST'])]
+    #[IsGranted("ROLE_USER", message: 'You do not have the right to add one user.')]
+    #[OA\Response(
+        response: 204,
+        description: 'Success user delete, no content return',
+    )]
+    #[OA\Tag(name: 'User')]
+    //#[Security(name: 'Bearer')]
     public function deleteOneBook(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
         if ($user === $this->getUser()) {

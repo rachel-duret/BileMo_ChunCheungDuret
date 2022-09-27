@@ -4,6 +4,7 @@ namespace App\Service;
 
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -11,7 +12,7 @@ class CacheService
 {
     private $cachePool;
     private $serializer;
-    private $request;
+
 
 
     public function __construct(TagAwareCacheInterface $cachePool, SerializerInterface $serializer)
@@ -20,7 +21,7 @@ class CacheService
         $this->serializer = $serializer;
     }
 
-    public function cache($request, $repository, string $getGroups, string $entityCache, $client = null)
+    public function cache(Request $request, $repository, string $getGroups, string $entityCache, $client = null)
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);

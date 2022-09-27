@@ -37,7 +37,12 @@ class UserController extends AbstractController
             items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
         )
     )]
-    #[OA\RequestBody(required: true,)]
+    #[OA\RequestBody(
+        required: true,
+        description: 'Add one user',
+        content: new OA\JsonContent(ref: new Model(type: User::class, groups: ['addUser']))
+
+    )]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
     public function addOneUser(
@@ -73,8 +78,6 @@ class UserController extends AbstractController
 
     /*  Get one user */
     #[Route('api/users/{id}', name: 'getOneUser', methods: ['GET'])]
-    #[Route('/api/users', name: 'addOneUser', methods: ['POST'])]
-    #[IsGranted("ROLE_USER", message: 'You do not have the right to add one user.')]
     #[OA\Response(
         response: 200,
         description: 'Return the detail of user by id',
@@ -154,8 +157,6 @@ class UserController extends AbstractController
     /* Delete one user */
 
     #[Route('/api/users/{id}', name: 'deleteOneUser', methods: ['DELETE'])]
-    #[Route('/api/users', name: 'addOneUser', methods: ['POST'])]
-    #[IsGranted("ROLE_USER", message: 'You do not have the right to add one user.')]
     #[OA\Response(
         response: 204,
         description: 'Success user delete, no content return',
@@ -164,7 +165,7 @@ class UserController extends AbstractController
     //#[Security(name: 'Bearer')]
     public function deleteOneBook(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
-        if ($user === $this->getUser()) {
+        if ($user->getClient() === $this->getUser()) {
             $cachePool->invalidateTags(["usersCache"]);
             $em->remove($user);
             $em->flush();

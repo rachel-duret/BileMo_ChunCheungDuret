@@ -43,13 +43,13 @@ class User
     private ?int $id = null;
 
     #[ORM\Column(length: 255, unique: true)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers", "addUser"])]
     #[Assert\NotBlank(message: "Username is required .")]
     #[Assert\Length(min: 4, max: 255, minMessage: " Username minimun {{ limit }} caracteres", maxMessage: "Username maximun{{ limit }} caracteres")]
     private ?string $username = null;
 
     #[ORM\Column(length: 255, unique: true)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers", "addUser"])]
     #[Assert\NotBlank(message: "Email is required .")]
     #[Assert\Email(message: "Have to be valid email .")]
     private ?string $email = null;

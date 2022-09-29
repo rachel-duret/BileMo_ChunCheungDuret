@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -39,7 +40,7 @@ class UserRepository extends ServiceEntityRepository
         }
     }
 
-    public function findAllWithPagination($page, $limit, $client)
+    public function findAllWithPagination(int $page, int $limit, UserInterface $client)
     {
 
         $queryBuilder = $this->createQueryBuilder('user')

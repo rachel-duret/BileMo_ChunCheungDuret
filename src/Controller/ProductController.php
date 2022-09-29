@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\Product;
-use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\ProductRepository;
 use App\Service\CacheService;
@@ -52,8 +51,9 @@ class ProductController extends AbstractController
         CacheService $cacheService,
         ClientRepository $clientRepository
     ): JsonResponse {
-        $user = $clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-        if ($user) {
+        // check logged user is the client of BileMo
+        $client = $clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        if ($client) {
             $getGroups = "getProducts";
             $productsCache = "productscache";
             //Call cache serrver
@@ -65,14 +65,14 @@ class ProductController extends AbstractController
                 true
             );
         }
-
+        // if logged user is not client of BileMo ,then retrun response 403 with a message
         return new JsonResponse(
-            null,
+            ['Message' => 'You do not have teh right to access this products'],
             Response::HTTP_FORBIDDEN
         );
     }
 
-    /* Get one product */
+    /* **********************Get one product *******************************/
     #[Route('/api/products/{id}', name: 'getOneProduct', methods: ['GET'])]
     #[OA\Response(
         response: 200,
@@ -90,8 +90,9 @@ class ProductController extends AbstractController
         SerializerInterface $serializer,
         ClientRepository $clientRepository
     ) {
-        $user = $clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-        if ($user) {
+        // check logged user is the client of BileMo
+        $client = $clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        if ($client) {
             $context = SerializationContext::create()->setGroups(["getProducts"]);
             $jsonProduct = $serializer->serialize($product, 'json', $context);
             return new JsonResponse(
@@ -101,9 +102,9 @@ class ProductController extends AbstractController
                 true
             );
         }
-
+        // if logged user is not client of BileMo ,then retrun response 403 with a message
         return new JsonResponse(
-            null,
+            ['Message' => 'You do not have teh right to access this product'],
             Response::HTTP_FORBIDDEN
         );
     }

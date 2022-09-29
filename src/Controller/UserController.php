@@ -37,6 +37,7 @@ class UserController extends AbstractController
             items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
         )
     )]
+    #[OA\Response(response: 409, description: 'User already exist .',)]
     #[OA\RequestBody(
         required: true,
         description: 'Add one user',
@@ -51,32 +52,39 @@ class UserController extends AbstractController
         UrlGeneratorInterface $urlGenerator,
         ValidatorInterface $validator,
         UserService $userService,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        UserRepository $userRepository
     ): JsonResponse {
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
         //Check data before stock in the database
         $errors = $validator->validate($user);
-
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
-        // user setting befor insert to database;
-        $userService->addOneUser($user, $this->getUser());
-        $em->persist($user);
-        $em->flush();
+        if (empty($userRepository->findOneBy(['username' => $user->getUsername()]))) {
+            // user setting befor insert to database;
+            $userService->addOneUser($user, $this->getUser());
+            $em->persist($user);
+            $em->flush();
 
-        $context = SerializationContext::create()->setGroups(["getUsers"]);
-        $jsonUser = $serializer->serialize($user, 'json', $context);
-        $location = $urlGenerator->generate('getOneUser', ['id' => $user->getId()]);
+            $context = SerializationContext::create()->setGroups(["getUsers"]);
+            $jsonUser = $serializer->serialize($user, 'json', $context);
+            $location = $urlGenerator->generate('getOneUser', ['id' => $user->getId()]);
+            return new JsonResponse(
+                $jsonUser,
+                Response::HTTP_CREATED,
+                ["Location" => $location],
+                true
+            );
+        }
+
         return new JsonResponse(
-            $jsonUser,
-            Response::HTTP_CREATED,
-            ["Location" => $location],
-            true
+            ['Message' => 'User already exist .'],
+            Response::HTTP_CONFLICT
         );
     }
 
-    /*  Get one user */
+    /* ********************************* Get one user******************************** */
     #[Route('api/users/{id}', name: 'getOneUser', methods: ['GET'])]
     #[OA\Response(
         response: 200,
@@ -86,6 +94,7 @@ class UserController extends AbstractController
             items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
         )
     )]
+    #[OA\Response(response: 403, description: 'Logged user do not have the right to access ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
     public function getOneUser(
@@ -105,10 +114,13 @@ class UserController extends AbstractController
                 true
             );
         }
-        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+        return new JsonResponse(
+            ['Message' => 'You do not have the right to access this user'],
+            Response::HTTP_FORBIDDEN
+        );
     }
 
-    /* Get all user */
+    /************************************* Get all user ****************************************** */
     #[Route('/api/users', name: 'getAllUsers', methods: ['GET'])]
     #[OA\Response(
         response: 200,
@@ -143,8 +155,6 @@ class UserController extends AbstractController
         $client  = $this->getUser();
         //call cache service
         $jsonUserList = $cacheService->cache($request, $userRepository, $getGroups, $userCache,  $client);
-
-
         return new JsonResponse(
             $jsonUserList,
             Response::HTTP_OK,
@@ -153,7 +163,6 @@ class UserController extends AbstractController
         );
     }
 
-
     /* Delete one user */
 
     #[Route('/api/users/{id}', name: 'deleteOneUser', methods: ['DELETE'])]
@@ -161,6 +170,7 @@ class UserController extends AbstractController
         response: 204,
         description: 'Success user delete, no content return',
     )]
+    #[OA\Response(response: 403, description: 'Logged user do not have the right  ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
     public function deleteOneBook(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
@@ -173,6 +183,9 @@ class UserController extends AbstractController
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
 
-        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+        return new JsonResponse(
+            ['Message' => 'You do not have the right to delete this user !',],
+            Response::HTTP_FORBIDDEN
+        );
     }
 }

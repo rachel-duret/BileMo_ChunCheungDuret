@@ -20,6 +20,11 @@ use OpenApi\Attributes as OA;
 
 class ProductController extends AbstractController
 {
+    public function __construct(
+        private ProductRepository $productRepository,
+        private ClientRepository $clientRepository
+    ) {
+    }
     /* Get all products */
     #[Route('/api/products', name: 'getAllProducts', methods: ['GET'])]
     #[OA\Response(
@@ -44,31 +49,30 @@ class ProductController extends AbstractController
         schema: new OA\Schema(type: 'integer')
     )]
     #[OA\Tag(name: 'Product')]
-    //#[Security(name: 'Bearer')]
+    #[Security(name: 'Bearer')]
     public function getAllProduct(
-        ProductRepository $productRepository,
         Request $request,
         CacheService $cacheService,
-        ClientRepository $clientRepository
     ): JsonResponse {
         // check logged user is the client of BileMo
-        $client = $clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-        if ($client) {
-            $getGroups = "getProducts";
-            $productsCache = "productscache";
-            //Call cache serrver
-            $jsonProducts = $cacheService->cache($request, $productRepository, $getGroups, $productsCache);
+        $client = $this->clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        if (!$client) {
+            // if logged user is not client of BileMo ,then retrun response 403 with a message
             return new JsonResponse(
-                $jsonProducts,
-                Response::HTTP_OK,
-                [],
-                true
+                ['Message' => 'You do not have teh right to access this products'],
+                Response::HTTP_FORBIDDEN
             );
         }
-        // if logged user is not client of BileMo ,then retrun response 403 with a message
+
+        $getGroups = "getProducts";
+        $productsCache = "productscache";
+        //Call cache serrver
+        $jsonProducts = $cacheService->cache($request, $this->productRepository, $getGroups, $productsCache);
         return new JsonResponse(
-            ['Message' => 'You do not have teh right to access this products'],
-            Response::HTTP_FORBIDDEN
+            $jsonProducts,
+            Response::HTTP_OK,
+            [],
+            true
         );
     }
 
@@ -83,29 +87,37 @@ class ProductController extends AbstractController
         )
     )]
     #[OA\Response(response: 403, description: 'Access forbidden',)]
+    #[OA\Response(response: 404, description: 'Product not found',)]
     #[OA\Tag(name: 'Product')]
     //#[Security(name: 'Bearer')]
     public function getOneProduct(
-        Product $product,
+        int $id,
         SerializerInterface $serializer,
-        ClientRepository $clientRepository
     ) {
         // check logged user is the client of BileMo
-        $client = $clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-        if ($client) {
-            $context = SerializationContext::create()->setGroups(["getProducts"]);
-            $jsonProduct = $serializer->serialize($product, 'json', $context);
+        $client = $this->clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        if (!$client) {
+            // if logged user is not client of BileMo ,then retrun response 403 with a message
             return new JsonResponse(
-                $jsonProduct,
-                Response::HTTP_OK,
-                [],
-                true
+                data: ['Message' => 'You do not have teh right to access this product'],
+                status: Response::HTTP_FORBIDDEN
             );
         }
-        // if logged user is not client of BileMo ,then retrun response 403 with a message
+
+        $product = $this->productRepository->find($id);
+        if (empty($product)) {
+            return new JsonResponse(
+                data: ['Message' => 'Product not found.'],
+                status: Response::HTTP_NOT_FOUND
+            );
+        }
+
+        $context = SerializationContext::create()->setGroups(["getProducts"]);
+        $jsonProduct = $serializer->serialize($product, 'json', $context);
         return new JsonResponse(
-            ['Message' => 'You do not have teh right to access this product'],
-            Response::HTTP_FORBIDDEN
+            data: $jsonProduct,
+            status: Response::HTTP_OK,
+            json: true
         );
     }
 }

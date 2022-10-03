@@ -7,7 +7,6 @@ use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\CacheService;
 use App\Service\UserService;
-use App\Service\VersioningService;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
@@ -26,6 +25,11 @@ use OpenApi\Attributes as OA;
 
 class UserController extends AbstractController
 {
+    public function __construct(
+        private UserRepository $userRepository,
+        private SerializerInterface $serializer,
+    ) {
+    }
     /* Add one user */
     #[Route('/api/users', name: 'addOneUser', methods: ['POST'])]
     #[IsGranted("ROLE_USER", message: 'You do not have the right to add one user.')]
@@ -45,42 +49,40 @@ class UserController extends AbstractController
 
     )]
     #[OA\Tag(name: 'User')]
-    //#[Security(name: 'Bearer')]
+    #[Security(name: 'Bearer')]
     public function addOneUser(
         Request $request,
-        SerializerInterface $serializer,
         UrlGeneratorInterface $urlGenerator,
         ValidatorInterface $validator,
         UserService $userService,
-        EntityManagerInterface $em,
-        UserRepository $userRepository
     ): JsonResponse {
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json');
+        $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
         //Check data before stock in the database
         $errors = $validator->validate($user);
         if ($errors->count() > 0) {
-            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
-        }
-        if (empty($userRepository->findOneBy(['username' => $user->getUsername()]))) {
-            // user setting befor insert to database;
-            $userService->addOneUser($user, $this->getUser());
-            $em->persist($user);
-            $em->flush();
-
-            $context = SerializationContext::create()->setGroups(["getUsers"]);
-            $jsonUser = $serializer->serialize($user, 'json', $context);
-            $location = $urlGenerator->generate('getOneUser', ['id' => $user->getId()]);
             return new JsonResponse(
-                $jsonUser,
-                Response::HTTP_CREATED,
-                ["Location" => $location],
-                true
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
             );
         }
-
+        // check user already exist or not
+        if (!empty($this->userRepository->findOneBy(['username' => $user->getUsername()]))) {
+            return new JsonResponse(
+                data: ['Message' => 'User already exist .'],
+                status: Response::HTTP_CONFLICT
+            );
+        }
+        // call user service setting user befor insert to database;
+        $userService->addOneUser($user, $this->getUser());
+        $context = SerializationContext::create()->setGroups(["getUsers"]);
+        $jsonUser = $this->serializer->serialize($user, 'json', $context);
+        $location = $urlGenerator->generate('getOneUser', ['id' => $user->getId()]);
         return new JsonResponse(
-            ['Message' => 'User already exist .'],
-            Response::HTTP_CONFLICT
+            data: $jsonUser,
+            status: Response::HTTP_CREATED,
+            headers: ["Location" => $location],
+            json: true
         );
     }
 
@@ -95,28 +97,32 @@ class UserController extends AbstractController
         )
     )]
     #[OA\Response(response: 403, description: 'Logged user do not have the right to access ',)]
+    #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
-    //#[Security(name: 'Bearer')]
-    public function getOneUser(
-        User $user,
-        SerializerInterface $serializer,
-        VersioningService $versioningService
-    ) {
-        if ($user->getClient() === $this->getUser()) {
-            $version = $versioningService->getVersion();
-            $context = SerializationContext::create()->setGroups(["getUsers"]);
-            $context->setVersion($version);
-            $jsonUser = $serializer->serialize($user, 'json', $context);
+    #[Security(name: 'Bearer')]
+    public function getOneUser(int $id)
+    {
+        $user = $this->userRepository->find($id);
+        if (empty($user)) {
             return new JsonResponse(
-                $jsonUser,
-                Response::HTTP_OK,
-                [],
-                true
+                data: ['Message' => 'User not found.'],
+                status: Response::HTTP_NOT_FOUND
             );
         }
+        // check logged user is same as user.client
+        if ($user->getClient() !== $this->getUser()) {
+            return new JsonResponse(
+                data: ['Message' => 'You do not have the right to access this user'],
+                status: Response::HTTP_FORBIDDEN
+            );
+        }
+
+        $context = SerializationContext::create()->setGroups(["getUsers"]);
+        $jsonUser = $this->serializer->serialize($user, 'json', $context);
         return new JsonResponse(
-            ['Message' => 'You do not have the right to access this user'],
-            Response::HTTP_FORBIDDEN
+            data: $jsonUser,
+            status: Response::HTTP_OK,
+            json: true
         );
     }
 
@@ -143,23 +149,17 @@ class UserController extends AbstractController
         schema: new OA\Schema(type: 'integer')
     )]
     #[OA\Tag(name: 'User')]
-    //#[Security(name: 'Bearer')]
+    #[Security(name: 'Bearer')]
     public function getAllUsers(
-        UserRepository $userRepository,
         Request $request,
         CacheService $cacheService,
     ): JsonResponse {
-
-        $getGroups = "getUsers";
-        $userCache = "usersCache";
-        $client  = $this->getUser();
         //call cache service
-        $jsonUserList = $cacheService->cache($request, $userRepository, $getGroups, $userCache,  $client);
+        $jsonUserList = $cacheService->cache($request, $this->userRepository, "getUsers", "usersCache",  $this->getUser());
         return new JsonResponse(
-            $jsonUserList,
-            Response::HTTP_OK,
-            [],
-            true
+            data: $jsonUserList,
+            status: Response::HTTP_OK,
+            json: true
         );
     }
 
@@ -171,21 +171,29 @@ class UserController extends AbstractController
         description: 'Success user delete, no content return',
     )]
     #[OA\Response(response: 403, description: 'Logged user do not have the right  ',)]
+    #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
-    public function deleteOneUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
+    public function deleteOneUser(int $id, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
-        if ($user->getClient() === $this->getUser()) {
-            $cachePool->invalidateTags(["usersCache"]);
-            $em->remove($user);
-            $em->flush();
-
-            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        $user = $this->userRepository->find($id);
+        if (empty($user)) {
+            return new JsonResponse(
+                data: ['Message' => 'User not found.'],
+                status: Response::HTTP_NOT_FOUND
+            );
         }
 
-        return new JsonResponse(
-            ['Message' => 'You do not have the right to delete this user !',],
-            Response::HTTP_FORBIDDEN
-        );
+        if ($user->getClient() !== $this->getUser()) {
+            return new JsonResponse(
+                data: ['Message' => 'You do not have the right to delete this user !',],
+                status: Response::HTTP_FORBIDDEN
+            );
+        }
+        $cachePool->invalidateTags(["usersCache"]);
+        $em->remove($user);
+        $em->flush();
+
+        return new JsonResponse(status: Response::HTTP_NO_CONTENT);
     }
 }

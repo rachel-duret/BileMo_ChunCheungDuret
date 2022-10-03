@@ -173,7 +173,7 @@ class UserController extends AbstractController
     #[OA\Response(response: 403, description: 'Logged user do not have the right  ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
-    public function deleteOneBook(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
+    public function deleteOneUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
         if ($user->getClient() === $this->getUser()) {
             $cachePool->invalidateTags(["usersCache"]);

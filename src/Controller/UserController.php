@@ -156,6 +156,7 @@ class UserController extends AbstractController
     ): JsonResponse {
         //call cache service
         $jsonUserList = $cacheService->cache($request, $this->userRepository, "getUsers", "usersCache",  $this->getUser());
+        //dd($jsonUserList);
         return new JsonResponse(
             data: $jsonUserList,
             status: Response::HTTP_OK,
@@ -163,7 +164,7 @@ class UserController extends AbstractController
         );
     }
 
-    /* Delete one user */
+    /*************************  Delete one user*****************************88888 */
 
     #[Route('/api/users/{id}', name: 'deleteOneUser', methods: ['DELETE'])]
     #[OA\Response(

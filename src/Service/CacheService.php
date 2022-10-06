@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Repository\UserRepository;
 use Hateoas\HateoasBuilder;
 use Hateoas\Representation\CollectionRepresentation;
 use Hateoas\Representation\PaginatedRepresentation;
@@ -20,38 +21,51 @@ class CacheService
     {
     }
 
-    public function cache(Request $request, object $repository, string $getGroups, string $entityCache, UserInterface $client = null)
-    {
+    public function cache(
+        Request $request,
+        object $repository,
+        string $getGroups,
+        string $entityCache,
+        string $route,
+        UserInterface $client = null
+    ) {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);
 
 
         // Cache setting
         $cacheId = "$getGroups-$page-$limit";
-        $jsonUserList = $this->cachePool->get($cacheId, function (ItemInterface $item) use ($repository, $page, $limit,  $getGroups, $entityCache, $client) {
+        $jsonUserList = $this->cachePool->get($cacheId, function (ItemInterface $item) use ($repository, $page, $limit,  $entityCache, $route, $client) {
             // echo is for test teh cache, will delete it in production
             echo ("not cache yet");
             $item->tag($entityCache);
 
-            //pagination users
+            if ($route === "getAllUsers") {
+                $list = $repository->findBy(['client' => $client]);
+            } else {
+                $list = $repository->findAll();
+            }
 
-            $list = $repository->findAll();
+            //pagination users
             $offset = ($page - 1) * $limit;
             $pages = (int) ceil(count($list) / $limit);
-            $hateoas = HateoasBuilder::create()->build();
+
             $collection =   new CollectionRepresentation($list, $offset, $limit);
             $paginatedCollection = new PaginatedRepresentation(
                 $collection,
-                'getAllUsers', // route
+                $route, // route
                 array(), // route parameters
                 $page,       // page number
                 $limit,      // limit
                 $pages,
             );
 
+            //dd($paginatedCollection);
 
-            $context = SerializationContext::create()->setGroups([$getGroups]);
-            return $hateoas->serialize($paginatedCollection, 'json', $context);
+            $context = SerializationContext::create()->setGroups(["Default"]);
+
+            // $hateoas = HateoasBuilder::create()->build();
+            return $this->serializer->serialize($paginatedCollection, 'json', $context);
         });
 
         return   $jsonUserList;

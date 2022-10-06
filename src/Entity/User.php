@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use Hateoas\Configuration\Annotation as Hateoas;
-use JMS\Serializer\Annotation\Since;
+use JMS\Serializer\Annotation\Expose;
 
 /**
  * ...
@@ -16,9 +16,10 @@ use JMS\Serializer\Annotation\Since;
  *     "self",
  *     href = @Hateoas\Route(
  *          "getOneUser",
- *          parameters = { "id" = "expr(object.getId())"}
+ *          parameters = { "id" = "expr(object.getId())"},
+ *          absolute = true
  *     ),
- *     exclusion = @Hateoas\Exclusion(groups="getUsers"),
+ *     exclusion = @Hateoas\Exclusion(groups={"Default", "getUsers"}),
  * )
  * 
  * @Hateoas\Relation(
@@ -27,7 +28,7 @@ use JMS\Serializer\Annotation\Since;
  *          "deleteOneUser",
  *          parameters = { "id" = "expr(object.getId())"}
  *       ),
- *         exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_USER'))"),
+ *         exclusion = @Hateoas\Exclusion(groups={"Default", "getUsers"}, excludeIf = "expr(not is_granted('ROLE_USER'))"),
  * )
  * 
  * 
@@ -36,33 +37,34 @@ use JMS\Serializer\Annotation\Since;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User
 {
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getUsers"])]
+    #[Groups(["Default", "getUsers",])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, unique: true)]
-    #[Groups(["getUsers", "addUser"])]
+    #[Groups(["Default", "getUsers", "addUser"])]
     #[Assert\NotBlank(message: "Username is required .")]
     #[Assert\Length(min: 4, max: 255, minMessage: " Username minimun {{ limit }} caracteres", maxMessage: "Username maximun{{ limit }} caracteres")]
     private ?string $username = null;
 
     #[ORM\Column(length: 255, unique: true)]
-    #[Groups(["getUsers", "addUser"])]
+    #[Groups(["Default", "getUsers", "addUser"])]
     #[Assert\NotBlank(message: "Email is required .")]
     #[Assert\Email(message: "Have to be valid email .")]
     private ?string $email = null;
 
     #[ORM\Column]
-    #[Groups(["getUsers"])]
+    #[Groups(["Default", "getUsers"])]
     //#[Assert\NotBlank(message: "Date is required .")]
-    //#[Since("2.0")]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
     //#[Groups(["getUsers"])]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["getClient"])]
     private ?Client $client = null;
 
 

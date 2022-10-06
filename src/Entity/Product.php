@@ -17,7 +17,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
  *          "getOneProduct",
  *          parameters = { "id" = "expr(object.getId())"}
  *     ),
- *     exclusion = @Hateoas\Exclusion(groups="getProducts"),
+ *     exclusion = @Hateoas\Exclusion(groups={"Default", "getProducts"}),
  * )
 
  * 
@@ -30,27 +30,27 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getProducts"])]
+    #[Groups(["Default", "getProducts"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getProducts"])]
+    #[Groups(["Default", "getProducts"])]
     private ?string $brand = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getProducts"])]
+    #[Groups(["Default", "getProducts"])]
     private ?string $model = null;
 
     #[ORM\Column]
-    #[Groups(["getProducts"])]
+    #[Groups(["Default", "getProducts"])]
     private ?int $price = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Groups(["getProducts"])]
+    #[Groups(["Default", "getProducts"])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["getProducts"])]
+    #[Groups(["Default", "getProducts"])]
     private ?string $imagePath = null;
 
     public function getId(): ?int

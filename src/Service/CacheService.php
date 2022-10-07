@@ -42,9 +42,9 @@ class CacheService
 
             if ($route === "getAllUsers") {
                 $list = $repository->findBy(['client' => $client]);
-            } else {
-                $list = $repository->findAll();
             }
+            $list = $repository->findAll();
+
 
             //pagination users
             $offset = ($page - 1) * $limit;

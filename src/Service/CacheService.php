@@ -39,11 +39,12 @@ class CacheService
             // echo is for test teh cache, will delete it in production
             echo ("not cache yet");
             $item->tag($entityCache);
-
             if ($route === "getAllUsers") {
                 $list = $repository->findBy(['client' => $client]);
+            } else {
+                $list = $repository->findAll();
             }
-            $list = $repository->findAll();
+
 
 
             //pagination users

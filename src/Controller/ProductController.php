@@ -16,13 +16,17 @@ use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 
 class ProductController extends AbstractController
 {
     public function __construct(
         private ProductRepository $productRepository,
-        private ClientRepository $clientRepository
+        private ClientRepository $clientRepository,
+        private SerializerInterface $serializer,
+        private ValidatorInterface $validator
     ) {
     }
     /* Get all products */
@@ -53,7 +57,22 @@ class ProductController extends AbstractController
     public function getAllProduct(
         Request $request,
         CacheService $cacheService,
+
     ): JsonResponse {
+
+        $constraints =  new Assert\Collection([
+            "page" => [new Assert\Type(['type' => 'numeric'])],
+            "limit" => [new Assert\Type(['type' => 'numeric'])]
+        ]);
+        $errors = $this->validator->validate($request->query->all(), $constraints);
+        if ($errors->count() > 0) {
+            return new JsonResponse(
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
+            );
+        }
+
         // check logged user is the client of BileMo
         $client = $this->clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
         if (!$client) {
@@ -98,8 +117,10 @@ class ProductController extends AbstractController
     #[OA\Tag(name: 'Product')]
     //#[Security(name: 'Bearer')]
     public function getOneProduct(
-        int $id,
         SerializerInterface $serializer,
+        int $id,
+        Request $request
+
     ) {
         // check logged user is the client of BileMo
         $client = $this->clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);

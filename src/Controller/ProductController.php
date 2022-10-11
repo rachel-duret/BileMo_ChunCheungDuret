@@ -3,9 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Product;
-use App\Repository\ClientRepository;
+
 use App\Repository\ProductRepository;
 use App\Service\CacheService;
+use App\Service\ClientService;
 use JMS\Serializer\SerializationContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,7 +25,7 @@ class ProductController extends AbstractController
 {
     public function __construct(
         private ProductRepository $productRepository,
-        private ClientRepository $clientRepository,
+        private ClientService $clientService,
         private SerializerInterface $serializer,
         private ValidatorInterface $validator
     ) {
@@ -74,7 +75,7 @@ class ProductController extends AbstractController
         }
 
         // check logged user is the client of BileMo
-        $client = $this->clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        $client = $this->clientService->getOneClient($this->getUser()->getUserIdentifier());
         if (!$client) {
             // if logged user is not client of BileMo ,then retrun response 403 with a message
             return new JsonResponse(
@@ -82,9 +83,6 @@ class ProductController extends AbstractController
                 Response::HTTP_FORBIDDEN
             );
         }
-
-
-        $productsCache = "productscache";
         $route = "getAllProducts";
         //Call cache serrver
         $jsonProducts = $cacheService->cache(
@@ -121,7 +119,7 @@ class ProductController extends AbstractController
 
     ) {
         // check logged user is the client of BileMo
-        $client = $this->clientRepository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        $client = $this->clientService->getOneClient($this->getUser()->getUserIdentifier());
         if (!$client) {
             // if logged user is not client of BileMo ,then retrun response 403 with a message
             return new JsonResponse(

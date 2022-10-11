@@ -30,7 +30,8 @@ class UserController extends AbstractController
     public function __construct(
         private UserRepository $userRepository,
         private SerializerInterface $serializer,
-        private ValidatorInterface $validator
+        private ValidatorInterface $validator,
+        private UserService $userService
     ) {
     }
     /* Add one user */
@@ -57,7 +58,6 @@ class UserController extends AbstractController
         Request $request,
         UrlGeneratorInterface $urlGenerator,
         ValidatorInterface $validator,
-        UserService $userService,
     ): JsonResponse {
         $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
         //Check data before stock in the database
@@ -70,14 +70,14 @@ class UserController extends AbstractController
             );
         }
         // check user already exist or not
-        if (!empty($this->userRepository->findOneBy(['username' => $user->getUsername()]))) {
+        if (!empty($this->userService->findOneBy($user->getUsername()))) {
             return new JsonResponse(
                 data: ['Message' => 'User already exist .'],
                 status: Response::HTTP_CONFLICT
             );
         }
         // call user service setting user befor insert to database;
-        $userService->addOneUser($user, $this->getUser());
+        $this->userService->addOneUser($user, $this->getUser());
         $context = SerializationContext::create()->setGroups(["getUsers"]);
         $jsonUser = $this->serializer->serialize($user, 'json', $context);
         $location = $urlGenerator->generate('getOneUser', ['id' => $user->getId()]);
@@ -105,7 +105,7 @@ class UserController extends AbstractController
     #[Security(name: 'Bearer')]
     public function getOneUser(int $id)
     {
-        $user = $this->userRepository->find($id);
+        $user = $this->userService->find($id);
         if (empty($user)) {
             return new JsonResponse(
                 data: ['Message' => 'User not found.'],
@@ -200,7 +200,7 @@ class UserController extends AbstractController
     //#[Security(name: 'Bearer')]
     public function deleteOneUser(int $id, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
-        $user = $this->userRepository->find($id);
+        $user = $this->userService->find($id);
         if (empty($user)) {
             return new JsonResponse(
                 data: ['Message' => 'User not found.'],
@@ -215,8 +215,7 @@ class UserController extends AbstractController
             );
         }
         $cachePool->invalidateTags(["getAllUsersCache"]);
-        $em->remove($user);
-        $em->flush();
+        $this->userService->remove($user);
 
         return new JsonResponse(status: Response::HTTP_NO_CONTENT);
     }

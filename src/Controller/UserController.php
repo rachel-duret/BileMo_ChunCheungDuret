@@ -22,12 +22,15 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 class UserController extends AbstractController
 {
     public function __construct(
         private UserRepository $userRepository,
         private SerializerInterface $serializer,
+        private ValidatorInterface $validator
     ) {
     }
     /* Add one user */
@@ -154,15 +157,25 @@ class UserController extends AbstractController
         Request $request,
         CacheService $cacheService,
     ): JsonResponse {
-        $getGroups = "getUsers";
-        $userCache = "usersCache";
+
+        $constraints =  new Assert\Collection([
+            "page" => [new Assert\Type(['type' => 'numeric'])],
+            "limit" => [new Assert\Type(['type' => 'numeric'])]
+        ]);
+        $errors = $this->validator->validate($request->query->all(), $constraints);
+        if ($errors->count() > 0) {
+            return new JsonResponse(
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
+            );
+        }
+
         $route = "getAllUsers";
         //call cache service
         $jsonUserList = $cacheService->cache(
             $request,
             $this->userRepository,
-            $getGroups,
-            $userCache,
             $route,
             $this->getUser()
         );
@@ -201,7 +214,7 @@ class UserController extends AbstractController
                 status: Response::HTTP_FORBIDDEN
             );
         }
-        $cachePool->invalidateTags(["usersCache"]);
+        $cachePool->invalidateTags(["getAllUsersCache"]);
         $em->remove($user);
         $em->flush();
 

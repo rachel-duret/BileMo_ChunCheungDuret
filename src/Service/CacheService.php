@@ -2,8 +2,7 @@
 
 namespace App\Service;
 
-use App\Repository\UserRepository;
-use Hateoas\HateoasBuilder;
+use App\Repository\RepositoryWithPagination;
 use Hateoas\Representation\CollectionRepresentation;
 use Hateoas\Representation\PaginatedRepresentation;
 use JMS\Serializer\SerializationContext;
@@ -24,8 +23,6 @@ class CacheService
     public function cache(
         Request $request,
         object $repository,
-        string $getGroups,
-        string $entityCache,
         string $route,
         UserInterface $client = null
     ) {
@@ -34,22 +31,15 @@ class CacheService
 
 
         // Cache setting
-        $cacheId = "$getGroups-$page-$limit";
-        $jsonUserList = $this->cachePool->get($cacheId, function (ItemInterface $item) use ($repository, $page, $limit,  $entityCache, $route, $client) {
-            // echo is for test teh cache, will delete it in production
-            echo ("not cache yet");
-            $item->tag($entityCache);
-            if ($route === "getAllUsers") {
-                $list = $repository->findBy(['client' => $client]);
-            } else {
-                $list = $repository->findAll();
-            }
-
-
-
+        $cacheId = "$route-$page-$limit";
+        $jsonUserList = $this->cachePool->get($cacheId, function (ItemInterface $item) use ($repository, $page, $limit,  $route, $client) {
+            $item->tag($route . 'Cache');
             //pagination users
             $offset = ($page - 1) * $limit;
-            $pages = (int) ceil(count($list) / $limit);
+            $totalItems = $repository->countAll($client);
+            $list = $repository->findAllWithPagination($offset, $limit, $client);
+
+            $pages = (int) ceil($totalItems[1] / intval($limit));
 
             $collection =   new CollectionRepresentation($list, $offset, $limit);
             $paginatedCollection = new PaginatedRepresentation(
@@ -61,11 +51,7 @@ class CacheService
                 $pages,
             );
 
-            //dd($paginatedCollection);
-
             $context = SerializationContext::create()->setGroups(["Default"]);
-
-            // $hateoas = HateoasBuilder::create()->build();
             return $this->serializer->serialize($paginatedCollection, 'json', $context);
         });
 

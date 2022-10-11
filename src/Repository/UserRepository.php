@@ -40,15 +40,25 @@ class UserRepository extends ServiceEntityRepository
         }
     }
 
-    public function findAllWithPagination(int $page, int $limit, UserInterface $client)
+    public function findAllWithPagination(int $offset, int $limit, ?UserInterface $client = null)
     {
 
         $queryBuilder = $this->createQueryBuilder('user')
             ->Where("user.client = :client")
             ->setParameter('client', $client)
-            ->setFirstResult(($page - 1) * $limit)
+            ->setFirstResult($offset)
             ->setMaxResults($limit);
         return $queryBuilder->getQuery()->getResult();
+    }
+
+    public function countAll(?UserInterface $client = null)
+    {
+        $queryBuilder = $this->createQueryBuilder('user')
+            ->select('COUNT(user)')
+            ->where("user.client = :client")
+            ->setParameter('client', $client);
+
+        return $queryBuilder->getQuery()->getOneOrNullResult();
     }
 
     //    /**

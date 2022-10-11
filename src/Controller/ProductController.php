@@ -83,15 +83,13 @@ class ProductController extends AbstractController
             );
         }
 
-        $getGroups = "getProducts";
+
         $productsCache = "productscache";
         $route = "getAllProducts";
         //Call cache serrver
         $jsonProducts = $cacheService->cache(
             $request,
             $this->productRepository,
-            $getGroups,
-            $productsCache,
             $route
         );
         return new JsonResponse(

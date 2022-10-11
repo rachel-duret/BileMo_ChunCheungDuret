@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Product;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<Product>
@@ -39,12 +40,20 @@ class ProductRepository extends ServiceEntityRepository
         }
     }
 
-    public function findAllWithPagination($page, $limit)
+    public function findAllWithPagination(int $offset, int $limit, ?UserInterface $client = null)
     {
         $queryBuilder = $this->createQueryBuilder('p')
-            ->setFirstResult(($page - 1) * $limit)
+            ->setFirstResult($offset)
             ->setMaxResults($limit);
         return $queryBuilder->getQuery()->getResult();
+    }
+
+    public function countAll(?UserInterface $client = null)
+    {
+        $queryBuilder = $this->createQueryBuilder('p')
+            ->select('count(p)');
+
+        return $queryBuilder->getQuery()->getOneOrNullResult();
     }
 
     //    /**

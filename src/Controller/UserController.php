@@ -171,16 +171,11 @@ class UserController extends AbstractController
             );
         }
 
-
-        $getGroups = "getUsers";
-        $userCache = "usersCache";
         $route = "getAllUsers";
         //call cache service
         $jsonUserList = $cacheService->cache(
             $request,
             $this->userRepository,
-            $getGroups,
-            $userCache,
             $route,
             $this->getUser()
         );
@@ -219,7 +214,7 @@ class UserController extends AbstractController
                 status: Response::HTTP_FORBIDDEN
             );
         }
-        $cachePool->invalidateTags(["usersCache"]);
+        $cachePool->invalidateTags(["getAllUsersCache"]);
         $em->remove($user);
         $em->flush();
 

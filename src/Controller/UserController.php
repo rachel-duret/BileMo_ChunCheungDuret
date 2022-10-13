@@ -2,12 +2,12 @@
 
 namespace App\Controller;
 
-use App\Entity\Client;
+
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\CacheService;
 use App\Service\UserService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Validators\RequestValidator;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -22,7 +22,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use OpenApi\Attributes as OA;
-use Symfony\Component\Validator\Constraints as Assert;
+
 
 
 class UserController extends AbstractController
@@ -103,8 +103,18 @@ class UserController extends AbstractController
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     #[Security(name: 'Bearer')]
-    public function getOneUser(int $id)
+    public function getOneUser(RequestValidator $requestValidator, Request $request)
     {
+        // check request 
+        $errors = $requestValidator->validate($request);
+        if ($errors) {
+            return new JsonResponse(
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
+            );
+        }
+        $id = $request->get('id');
         $user = $this->userService->find($id);
         if (empty($user)) {
             return new JsonResponse(
@@ -112,11 +122,11 @@ class UserController extends AbstractController
                 status: Response::HTTP_NOT_FOUND
             );
         }
-        // check logged user is same as user.client
+        // if the logged user is not the owner of this user , return 403, But for secyrity we return 404
         if ($user->getClient() !== $this->getUser()) {
             return new JsonResponse(
-                data: ['Message' => 'You do not have the right to access this user'],
-                status: Response::HTTP_FORBIDDEN
+                data: ['Message' => 'Page not found'],
+                status: Response::HTTP_NOT_FOUND
             );
         }
 
@@ -156,14 +166,12 @@ class UserController extends AbstractController
     public function getAllUsers(
         Request $request,
         CacheService $cacheService,
+        RequestValidator $requestValidator
     ): JsonResponse {
 
-        $constraints =  new Assert\Collection([
-            "page" => [new Assert\Type(['type' => 'numeric'])],
-            "limit" => [new Assert\Type(['type' => 'numeric'])]
-        ]);
-        $errors = $this->validator->validate($request->query->all(), $constraints);
-        if ($errors->count() > 0) {
+        // check request 
+        $errors = $requestValidator->validate($request);
+        if ($errors) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
                 status: Response::HTTP_BAD_REQUEST,
@@ -198,8 +206,20 @@ class UserController extends AbstractController
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
-    public function deleteOneUser(int $id, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
+    public function deleteOneUser(Request $request, TagAwareCacheInterface $cachePool, RequestValidator $requestValidator): JsonResponse
     {
+
+        // check request 
+        $errors = $requestValidator->validate($request);
+        if ($errors) {
+            return new JsonResponse(
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
+            );
+        }
+        $id = $request->get('id');
+        // call user service to  check is exiting user;
         $user = $this->userService->find($id);
         if (empty($user)) {
             return new JsonResponse(
@@ -207,11 +227,11 @@ class UserController extends AbstractController
                 status: Response::HTTP_NOT_FOUND
             );
         }
-
+        // if the logged user is not the owner of this user , return 403, But for secyrity we return 404
         if ($user->getClient() !== $this->getUser()) {
             return new JsonResponse(
-                data: ['Message' => 'You do not have the right to delete this user !',],
-                status: Response::HTTP_FORBIDDEN
+                data: ['Message' => 'Page not found !',],
+                status: Response::HTTP_NOT_FOUND
             );
         }
         $cachePool->invalidateTags(["getAllUsersCache"]);

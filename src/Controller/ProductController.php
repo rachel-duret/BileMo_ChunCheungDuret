@@ -7,6 +7,7 @@ use App\Entity\Product;
 use App\Repository\ProductRepository;
 use App\Service\CacheService;
 use App\Service\ClientService;
+use App\Validators\RequestValidator;
 use JMS\Serializer\SerializationContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -58,15 +59,13 @@ class ProductController extends AbstractController
     public function getAllProduct(
         Request $request,
         CacheService $cacheService,
+        RequestValidator $requestValidator
 
     ): JsonResponse {
 
-        $constraints =  new Assert\Collection([
-            "page" => [new Assert\Type(['type' => 'numeric'])],
-            "limit" => [new Assert\Type(['type' => 'numeric'])]
-        ]);
-        $errors = $this->validator->validate($request->query->all(), $constraints);
-        if ($errors->count() > 0) {
+        // check request 
+        $errors = $requestValidator->validate($request);
+        if ($errors) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
                 status: Response::HTTP_BAD_REQUEST,
@@ -77,10 +76,12 @@ class ProductController extends AbstractController
         // check logged user is the client of BileMo
         $client = $this->clientService->getOneClient($this->getUser()->getUserIdentifier());
         if (!$client) {
-            // if logged user is not client of BileMo ,then retrun response 403 with a message
+            /*
+            if logged user is not client of BileMo ,then retrun response 403 with a message, But for security we return 404 
+            */
             return new JsonResponse(
-                ['Message' => 'You do not have teh right to access this products'],
-                Response::HTTP_FORBIDDEN
+                data: ['Message' => 'Page not found'],
+                status: Response::HTTP_NOT_FOUND
             );
         }
         $route = "getAllProducts";
@@ -91,10 +92,9 @@ class ProductController extends AbstractController
             $route
         );
         return new JsonResponse(
-            $jsonProducts,
-            Response::HTTP_OK,
-            [],
-            true
+            data: $jsonProducts,
+            status: Response::HTTP_OK,
+            json: true
         );
     }
 
@@ -114,10 +114,21 @@ class ProductController extends AbstractController
     //#[Security(name: 'Bearer')]
     public function getOneProduct(
         SerializerInterface $serializer,
-        int $id,
-        Request $request
+        Request $request,
+        RequestValidator $requestValidator
 
     ) {
+
+        // check request 
+        $errors = $requestValidator->validate($request);
+        if ($errors) {
+            return new JsonResponse(
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
+            );
+        }
+        $id = $request->get('id');
         // check logged user is the client of BileMo
         $client = $this->clientService->getOneClient($this->getUser()->getUserIdentifier());
         if (!$client) {

@@ -20,6 +20,7 @@ class ExceptionSubscriber implements EventSubscriberInterface
             ];
             $event->setResponse(new JsonResponse($data));
         } else {
+
             $data = [
                 'status' => 500,
                 'message' => $exception->getMessage()

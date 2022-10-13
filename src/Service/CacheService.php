@@ -32,6 +32,8 @@ class CacheService
         $cacheId = "$route-$page-$limit";
         $jsonUserList = $this->cachePool->get($cacheId, function (ItemInterface $item) use ($repository, $page, $limit,  $route, $client) {
             $item->tag($route . 'Cache');
+            $item->expiresAfter(3);
+
             //pagination users
             return $this->paginationService->paginate($page, $limit, $route, $repository, $client);
         });

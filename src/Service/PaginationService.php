@@ -19,7 +19,7 @@ class PaginationService
         $totalItems = $repository->countAll($client);
         $list = $repository->findAllWithPagination($offset, $limit, $client);
 
-        $pages = (int) ceil($totalItems[1] / intval($limit));
+        $pages = (int) ceil($totalItems[1] / (int)$limit);
 
         $collection =   new CollectionRepresentation($list, $offset, $limit);
         $paginatedCollection = new PaginatedRepresentation(

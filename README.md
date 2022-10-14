@@ -10,22 +10,37 @@ fetch the catalog of cellphone in business to bussiness.
 
 ### This project needs
 
+```
 Here is the list of fonctions that should be accessible from your website:
 
--Consult the list of bileMo product -Details of a BileMo produuct -Consult the
-list of registered users linked to a client on the website -Consult the details
-of a registered user linked to a client -Add a new user linked to a client
--Delete a user added by a client -Only refenced clients can access the API, API
-client must be authenticated
+    -Consult the list of bileMo product -Details of a BileMo produuct
+    -Consult the list of registered users linked to a client on the website
+    -Consult the details of a registered user linked to a client
+    -Add a new user linked to a client
+    -Delete a user added by a client
+    -Only refenced clients can access the API, API client must be authenticated
+```
 
 ## Built With
 
--PHP -Composer -Symfony6 -Lexik JWT- Authentication-Bundle -NelmioBundle
-API-Doc-Bundle -Doctrine/Bundle
+```
+-PHP
+-Composer
+-Symfony6
+-Lexik JWT Authentication-Bundle
+-NelmioBundle API-Doc-Bundle
+-Doctrine/Bundle
+```
 
 ## Requirements
 
--PHP >= 8.1 -Web server -Composer >= 2.3.10 -Symfony >= 6.1 -Mysql >= 5.7.24
+```
+-PHP >= 8.1
+-Web server
+-Composer >= 2.3.10
+-Symfony >= 6.1
+-Mysql >= 5.7.24`
+```
 
 ## Installation
 
@@ -34,17 +49,23 @@ API-Doc-Bundle -Doctrine/Bundle
 
 -Clone the repo
 [ProjetRepo](https://github.com/rachel-duret/BileMo_ChunCheungDuret.git)
--Symfony install [Symfony](https://symfony.com/doc/current/setup.html) -Get into
-your project directory start your web server -Install libraries -composer
-install -Set up the database -Create .env.local file following .env file to
-configure the appropriates values
+
+1. Symfony install [Symfony](https://symfony.com/doc/current/setup.html)
+2. Get into your project directory start your web server -Install libraries
+3. composer install
+4. Set up the database
+5. -Create .env.local file following .env file to configure the appropriates
+   values
 
 ### JWT Keys
 
--For generate the private key run the command: openssl genpkey -out
-config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -For
-generate the private key run the command: openssl pkey -in
-config/jwt/private.pem -out config/jwt/public.pem -pubout
+```
+-For generate the private key run the command:
+    openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+
+-For generate the private key run the command:
+    openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout
+```
 
 ### Demo data
 

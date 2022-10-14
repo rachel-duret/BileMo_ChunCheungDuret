@@ -50,7 +50,6 @@ class UserController extends AbstractController
         required: true,
         description: 'Add one user',
         content: new OA\JsonContent(ref: new Model(type: User::class, groups: ['addUser']))
-
     )]
     #[OA\Tag(name: 'User')]
     #[Security(name: 'Bearer')]
@@ -99,7 +98,6 @@ class UserController extends AbstractController
             items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
         )
     )]
-    #[OA\Response(response: 403, description: 'Logged user do not have the right to access ',)]
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     #[Security(name: 'Bearer')]

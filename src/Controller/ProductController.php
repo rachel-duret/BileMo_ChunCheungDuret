@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\Product;
-
 use App\Repository\ProductRepository;
 use App\Service\CacheService;
 use App\Service\ClientService;
@@ -18,7 +17,6 @@ use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 
@@ -41,7 +39,7 @@ class ProductController extends AbstractController
             items: new OA\Items(ref: new Model(type: Product::class, groups: ['getProducts']))
         )
     )]
-    #[OA\Response(response: 403, description: 'Access forbidden',)]
+    #[OA\Response(response: 404, description: 'Page not found',)]
     #[OA\Parameter(
         name: 'page',
         in: 'query',
@@ -60,9 +58,7 @@ class ProductController extends AbstractController
         Request $request,
         CacheService $cacheService,
         RequestValidator $requestValidator
-
     ): JsonResponse {
-
         // check request 
         $errors = $requestValidator->validate($request);
         if ($errors) {
@@ -108,7 +104,6 @@ class ProductController extends AbstractController
             items: new OA\Items(ref: new Model(type: Product::class, groups: ['getProducts']))
         )
     )]
-    #[OA\Response(response: 403, description: 'Access forbidden',)]
     #[OA\Response(response: 404, description: 'Product not found',)]
     #[OA\Tag(name: 'Product')]
     //#[Security(name: 'Bearer')]
@@ -116,9 +111,7 @@ class ProductController extends AbstractController
         SerializerInterface $serializer,
         Request $request,
         RequestValidator $requestValidator
-
     ) {
-
         // check request 
         $errors = $requestValidator->validate($request);
         if ($errors) {
@@ -134,8 +127,8 @@ class ProductController extends AbstractController
         if (!$client) {
             // if logged user is not client of BileMo ,then retrun response 403 with a message
             return new JsonResponse(
-                data: ['Message' => 'You do not have teh right to access this product'],
-                status: Response::HTTP_FORBIDDEN
+                data: ['Message' => 'Page not found'],
+                status: Response::HTTP_NOT_FOUND
             );
         }
 

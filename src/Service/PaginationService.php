@@ -13,11 +13,11 @@ class PaginationService
     public function __construct(private SerializerInterface $serializer)
     {
     }
-    public function paginate(string $page, string $limit, string $route, Object $repository, ?UserInterface $client = null)
+    public function paginate(string $page, string $limit, string $route, GenericPaginationServiceInterface $service, ?UserInterface $client = null)
     {
         $offset = ($page - 1) * $limit;
-        $totalItems = $repository->countAll($client);
-        $list = $repository->findAllWithPagination($offset, $limit, $client);
+        $totalItems = $service->countAll($client);
+        $list = $service->findAllWithPagination($offset, $limit, $client);
 
         $pages = (int) ceil($totalItems[1] / (int)$limit);
 

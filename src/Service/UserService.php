@@ -7,13 +7,23 @@ use App\Entity\User;
 use App\Repository\UserRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
-class UserService
+class UserService implements GenericPaginationServiceInterface
 {
     public function __construct(
         private EntityManagerInterface $em,
         private UserRepository $userRepository
     ) {
+    }
+
+    public function findAllWithPagination(int $offset, int $limt, ?UserInterface $client = null)
+    {
+        return $this->userRepository->findAllWithPagination($offset, $limt, $client);
+    }
+    public function countAll(?UserInterface $client = null)
+    {
+        return $this->userRepository->countAll($client);
     }
 
 

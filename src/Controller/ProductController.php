@@ -3,9 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Product;
-use App\Repository\ProductRepository;
 use App\Service\CacheService;
 use App\Service\ClientService;
+use App\Service\ProductService;
 use App\Validators\RequestValidator;
 use JMS\Serializer\SerializationContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,10 +23,11 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class ProductController extends AbstractController
 {
     public function __construct(
-        private ProductRepository $productRepository,
         private ClientService $clientService,
         private SerializerInterface $serializer,
-        private ValidatorInterface $validator
+        private ValidatorInterface $validator,
+        private ProductService $productService,
+        private RequestValidator $requestValidator,
     ) {
     }
     /* Get all products */
@@ -57,10 +58,9 @@ class ProductController extends AbstractController
     public function getAllProduct(
         Request $request,
         CacheService $cacheService,
-        RequestValidator $requestValidator
     ): JsonResponse {
         // check request 
-        $errors = $requestValidator->validate($request);
+        $errors = $this->requestValidator->validate($request);
         if ($errors) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
@@ -84,7 +84,7 @@ class ProductController extends AbstractController
         //Call cache serrver
         $jsonProducts = $cacheService->cache(
             $request,
-            $this->productRepository,
+            $this->productService,
             $route
         );
         return new JsonResponse(
@@ -110,10 +110,9 @@ class ProductController extends AbstractController
     public function getOneProduct(
         SerializerInterface $serializer,
         Request $request,
-        RequestValidator $requestValidator
     ) {
         // check request 
-        $errors = $requestValidator->validate($request);
+        $errors = $this->requestValidator->validate($request);
         if ($errors) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
@@ -132,7 +131,7 @@ class ProductController extends AbstractController
             );
         }
 
-        $product = $this->productRepository->find($id);
+        $product = $this->productService->find($id);
         if (empty($product)) {
             return new JsonResponse(
                 data: ['Message' => 'Product not found.'],

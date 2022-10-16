@@ -4,7 +4,6 @@ namespace App\Controller;
 
 
 use App\Entity\User;
-use App\Repository\UserRepository;
 use App\Service\CacheService;
 use App\Service\UserService;
 use App\Validators\RequestValidator;
@@ -28,10 +27,10 @@ use OpenApi\Attributes as OA;
 class UserController extends AbstractController
 {
     public function __construct(
-        private UserRepository $userRepository,
         private SerializerInterface $serializer,
         private ValidatorInterface $validator,
-        private UserService $userService
+        private UserService $userService,
+        private RequestValidator $requestValidator,
     ) {
     }
     /* Add one user */
@@ -56,11 +55,10 @@ class UserController extends AbstractController
     public function addOneUser(
         Request $request,
         UrlGeneratorInterface $urlGenerator,
-        ValidatorInterface $validator,
     ): JsonResponse {
         $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
         //Check data before stock in the database
-        $errors = $validator->validate($user);
+        $errors = $this->validator->validate($user);
         if ($errors->count() > 0) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
@@ -101,10 +99,10 @@ class UserController extends AbstractController
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     #[Security(name: 'Bearer')]
-    public function getOneUser(RequestValidator $requestValidator, Request $request)
+    public function getOneUser(Request $request)
     {
         // check request 
-        $errors = $requestValidator->validate($request);
+        $errors = $this->requestValidator->validate($request);
         if ($errors) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
@@ -164,11 +162,9 @@ class UserController extends AbstractController
     public function getAllUsers(
         Request $request,
         CacheService $cacheService,
-        RequestValidator $requestValidator
     ): JsonResponse {
-
         // check request 
-        $errors = $requestValidator->validate($request);
+        $errors = $this->requestValidator->validate($request);
         if ($errors) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
@@ -181,7 +177,7 @@ class UserController extends AbstractController
         //call cache service
         $jsonUserList = $cacheService->cache(
             $request,
-            $this->userRepository,
+            $this->userService,
             $route,
             $this->getUser()
         );
@@ -204,11 +200,11 @@ class UserController extends AbstractController
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
-    public function deleteOneUser(Request $request, TagAwareCacheInterface $cachePool, RequestValidator $requestValidator): JsonResponse
+    public function deleteOneUser(Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
 
         // check request 
-        $errors = $requestValidator->validate($request);
+        $errors = $this->requestValidator->validate($request);
         if ($errors) {
             return new JsonResponse(
                 data: $this->serializer->serialize($errors, 'json'),
@@ -221,7 +217,7 @@ class UserController extends AbstractController
         $user = $this->userService->find($id);
         if (empty($user)) {
             return new JsonResponse(
-                data: ['Message' => 'User not found.'],
+                data: ['Message' => 'Page not found.'],
                 status: Response::HTTP_NOT_FOUND
             );
         }

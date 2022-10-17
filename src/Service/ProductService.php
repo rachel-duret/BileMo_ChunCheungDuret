@@ -2,17 +2,12 @@
 
 namespace App\Service;
 
-use App\Entity\Client;
-use App\Entity\Product;
 use App\Repository\ProductRepository;
-use DateTimeImmutable;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class ProductService implements GenericPaginationServiceInterface
 {
     public function __construct(
-        private EntityManagerInterface $em,
         private ProductRepository $productRepository
     ) {
     }

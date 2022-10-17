@@ -17,7 +17,7 @@ use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Attributes as OA;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
+
 
 
 class ProductController extends AbstractController
@@ -25,7 +25,6 @@ class ProductController extends AbstractController
     public function __construct(
         private ClientService $clientService,
         private SerializerInterface $serializer,
-        private ValidatorInterface $validator,
         private ProductService $productService,
         private RequestValidator $requestValidator,
     ) {

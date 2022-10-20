@@ -35,6 +35,14 @@ class UserService implements GenericPaginationServiceInterface
         $this->em->flush();
     }
 
+    public function updateOneUser(User $user, User $newUser): void
+    {
+        $user->setCreatedAt(new DateTimeImmutable());
+        $user->setUsername($newUser->getUsername());
+        $user->setEmail($newUser->getEmail());
+        $this->em->flush();
+    }
+
     public function remove(object $user)
     {
         $this->em->remove($user);

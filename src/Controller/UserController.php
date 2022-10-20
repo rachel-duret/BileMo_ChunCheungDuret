@@ -31,6 +31,7 @@ class UserController extends AbstractController
         private ValidatorInterface $validator,
         private UserService $userService,
         private RequestValidator $requestValidator,
+        private TagAwareCacheInterface $cachePool
     ) {
     }
     /* Add one user */
@@ -86,6 +87,65 @@ class UserController extends AbstractController
             json: true
         );
     }
+
+
+    /* ********************************* update one user******************************** */
+    #[Route('api/users/{id}', name: 'updateOneUser', methods: ['PUT'])]
+    #[OA\Response(response: 204, description: 'No content')]
+    #[OA\Response(response: 400, description: 'Bad request .',)]
+    #[OA\Response(response: 404, description: 'User not found  ',)]
+    #[OA\Tag(name: 'User')]
+    #[Security(name: 'Bearer')]
+    public function updateOneUser(Request $request)
+    {
+        // check request 
+        $errors = $this->requestValidator->validate($request);
+        if ($errors) {
+            return new JsonResponse(
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
+            );
+        }
+        $id = $request->get('id');
+        $user = $this->userService->find($id);
+        if (empty($user)) {
+            return new JsonResponse(
+                data: ['Message' => 'Page not found.'],
+                status: Response::HTTP_NOT_FOUND
+            );
+        }
+        // if the logged user is not the owner of this user , return 403, But for secyrity we return 404
+        if ($user->getClient() !== $this->getUser()) {
+            return new JsonResponse(
+                data: ['Message' => 'Page not found'],
+                status: Response::HTTP_NOT_FOUND
+            );
+        }
+
+        $newUser = $this->serializer->deserialize($request->getContent(), User::class, 'json');
+        //Check data before stock in the database
+        $errors = $this->validator->validate($newUser);
+        if ($errors->count() > 0) {
+            return new JsonResponse(
+                data: $this->serializer->serialize($errors, 'json'),
+                status: Response::HTTP_BAD_REQUEST,
+                json: true
+            );
+        }
+        // check user already exist or not
+        if (!empty($this->userService->findOneBy($newUser->getUsername())) && $this->userService->findOneBy($newUser->getUsername()) !== $user) {
+            return new JsonResponse(
+                data: ['Message' => 'User already exist .'],
+                status: Response::HTTP_CONFLICT
+            );
+        }
+        // call user service setting user befor insert to database;
+        $this->cachePool->invalidateTags(["getAllUsersCache"]);
+        $this->userService->updateOneUser($user, $newUser);
+        return new JsonResponse(status: Response::HTTP_NO_CONTENT);
+    }
+
 
     /* ********************************* Get one user******************************** */
     #[Route('api/users/{id}', name: 'getOneUser', methods: ['GET'])]
@@ -203,9 +263,8 @@ class UserController extends AbstractController
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]
-    public function deleteOneUser(Request $request, TagAwareCacheInterface $cachePool): JsonResponse
+    public function deleteOneUser(Request $request): JsonResponse
     {
-
         // check request 
         $errors = $this->requestValidator->validate($request);
         if ($errors) {
@@ -231,7 +290,7 @@ class UserController extends AbstractController
                 status: Response::HTTP_NOT_FOUND
             );
         }
-        $cachePool->invalidateTags(["getAllUsersCache"]);
+        $this->cachePool->invalidateTags(["getAllUsersCache"]);
         $this->userService->remove($user);
 
         return new JsonResponse(status: Response::HTTP_NO_CONTENT);

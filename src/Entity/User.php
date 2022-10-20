@@ -32,10 +32,21 @@ use Hateoas\Configuration\Annotation as Hateoas;
  * )
  * 
  * @Hateoas\Relation(
+ *      "update",
+ *       href = @Hateoas\Route(
+ *          "updateOneUser",
+ *           parameters = { "id" = "expr(object.getId())"},
+ *           absolute = true
+ *       ),
+ *         exclusion = @Hateoas\Exclusion(groups={"Default", "getUsers"}, excludeIf = "expr(not is_granted('ROLE_USER'))"),
+ * )
+ * 
+ * @Hateoas\Relation(
  *      "delete",
  *       href = @Hateoas\Route(
  *          "deleteOneUser",
- *          parameters = { "id" = "expr(object.getId())"}
+ *          parameters = { "id" = "expr(object.getId())"},
+ *          absolute = true
  *       ),
  *         exclusion = @Hateoas\Exclusion(groups={"Default", "getUsers"}, excludeIf = "expr(not is_granted('ROLE_USER'))"),
  * )

@@ -39,6 +39,7 @@ class ProductController extends AbstractController
             items: new OA\Items(ref: new Model(type: Product::class, groups: ['getProducts']))
         )
     )]
+    #[OA\Response(response: 400, description: 'Bad request .',)]
     #[OA\Response(response: 404, description: 'Page not found',)]
     #[OA\Parameter(
         name: 'page',
@@ -103,6 +104,7 @@ class ProductController extends AbstractController
             items: new OA\Items(ref: new Model(type: Product::class, groups: ['getProducts']))
         )
     )]
+    #[OA\Response(response: 400, description: 'Bad request .',)]
     #[OA\Response(response: 404, description: 'Product not found',)]
     #[OA\Tag(name: 'Product')]
     //#[Security(name: 'Bearer')]

@@ -44,6 +44,7 @@ class UserController extends AbstractController
             items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
         )
     )]
+    #[OA\Response(response: 400, description: 'Bad request .',)]
     #[OA\Response(response: 409, description: 'User already exist .',)]
     #[OA\RequestBody(
         required: true,
@@ -96,6 +97,7 @@ class UserController extends AbstractController
             items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
         )
     )]
+    #[OA\Response(response: 400, description: 'Bad request .',)]
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     #[Security(name: 'Bearer')]
@@ -145,6 +147,7 @@ class UserController extends AbstractController
             items: new OA\Items(ref: new Model(type: User::class, groups: ['getUsers']))
         )
     )]
+    #[OA\Response(response: 400, description: 'Bad request .',)]
     #[OA\Parameter(
         name: 'page',
         in: 'query',
@@ -196,7 +199,7 @@ class UserController extends AbstractController
         response: 204,
         description: 'Success user delete, no content return',
     )]
-    #[OA\Response(response: 403, description: 'Logged user do not have the right  ',)]
+    #[OA\Response(response: 400, description: 'Bad request .',)]
     #[OA\Response(response: 404, description: 'User not found  ',)]
     #[OA\Tag(name: 'User')]
     //#[Security(name: 'Bearer')]

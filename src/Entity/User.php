@@ -23,6 +23,15 @@ use Hateoas\Configuration\Annotation as Hateoas;
  * )
  * 
  * @Hateoas\Relation(
+ *      "create",
+ *       href = @Hateoas\Route(
+ *          "addOneUser",
+ *           absolute = true
+ *       ),
+ *         exclusion = @Hateoas\Exclusion(groups={"Default", "getUsers"}, excludeIf = "expr(not is_granted('ROLE_USER'))"),
+ * )
+ * 
+ * @Hateoas\Relation(
  *      "delete",
  *       href = @Hateoas\Route(
  *          "deleteOneUser",
